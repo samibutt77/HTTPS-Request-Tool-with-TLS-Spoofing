@@ -41,7 +41,9 @@ Save it as proxies.txt in the root directory (right now a proxies.txt file is al
 
 # Installation & Setup
 
-- git clone https://github.com/your-repo/abtls.git
+- git clone https://github.com/samibutt77/HTTPS-Request-Tool-with-TLS-Spoofing.git
+
+- cd HTTPS-Request-Tool-with-TLS-Spoofing
 
 - cd abtls
 
