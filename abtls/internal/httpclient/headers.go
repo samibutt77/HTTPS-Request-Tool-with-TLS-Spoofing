@@ -16,6 +16,11 @@ func GetHeadersForProfile(profile string) http.Header {
 		headers.Set("Sec-Fetch-Site", "none")
 		headers.Set("Sec-Fetch-User", "?1")
 		headers.Set("Upgrade-Insecure-Requests", "1")
+		headers.Set("Sec-CH-UA", `"Chromium";v="114", "Not.A/Brand";v="8", "Google Chrome";v="114"`)
+		headers.Set("Sec-CH-UA-Mobile", "?0")
+		headers.Set("Sec-CH-UA-Platform", `"Windows"`)
+		headers.Set("Referer", "https://www.google.com/")
+		headers.Set("Origin", "https://www.google.com")
 
 	case "firefox":
 		headers.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0")
@@ -27,6 +32,8 @@ func GetHeadersForProfile(profile string) http.Header {
 		headers.Set("Sec-Fetch-Mode", "navigate")
 		headers.Set("Sec-Fetch-Site", "none")
 		headers.Set("Sec-Fetch-User", "?1")
+		headers.Set("Referer", "https://www.google.com/")
+		headers.Set("Origin", "https://www.google.com")
 
 	case "safari":
 		headers.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.2 Safari/605.1.15")
@@ -34,7 +41,10 @@ func GetHeadersForProfile(profile string) http.Header {
 		headers.Set("Accept-Language", "en-us")
 		headers.Set("Accept-Encoding", "gzip, deflate, br")
 		headers.Set("Upgrade-Insecure-Requests", "1")
+		headers.Set("Referer", "https://www.google.com/")
+		headers.Set("Origin", "https://www.google.com")
 	}
 
 	return headers
 }
+
