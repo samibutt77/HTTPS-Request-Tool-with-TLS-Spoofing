@@ -54,11 +54,6 @@ Save it as proxies.txt in the root directory (right now a proxies.txt file is al
 
 Ensure your proxy file proxies.txt is placed in the root directory.
 
-#  Tip:
- # Use the "safari" profile for best results, specially for the "viagogo" site. I was getting success 200 Ok on the 1st request using safari profile during testing the urls provided.
- # To print known benign JA3, run the command go run cmd/abtls/main.go --list-ja3
-
-
 # Usage
 
 Run from terminal:
@@ -68,6 +63,8 @@ Run from terminal:
 Example:
 
 - go run cmd/abtls/main.go --url "https://www.viagogo.com/Concert-Tickets/Alternative-Music/Coldplay-Tickets/E-155741198" --profile safari --min-delay 500 --max-delay 3000
+
+# To print known benign JA3, run the command "go run cmd/abtls/main.go --list-ja3"
 
 
 # Options:
