@@ -51,7 +51,10 @@ Save it as proxies.txt in the root directory (right now a proxies.txt file is al
 
 Ensure your proxy file proxies.txt is placed in the root directory.
 
-#  Tip: Use the "safari" profile for best results. I was getting success 200 Ok on the 1st request using safari profile during testing the urls provided.
+#  Tip:
+ # Use the "safari" profile for best results, specially for the "viagogo" site. I was getting success 200 Ok on the 1st request using safari profile during testing the urls provided.
+ # To print known benign JA3, run the command go run cmd/abtls/main.go --list-ja3
+
 
 # Usage
 
