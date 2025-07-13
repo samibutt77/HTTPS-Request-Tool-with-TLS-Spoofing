@@ -32,7 +32,10 @@ Before running the tool, ensure you have:
 Go 1.20+ installed
 Install Go from https://golang.org/dl/
 
-Required Go modules (installed automatically using go mod tidy)
+Git Installed
+Install Git from https://git-scm.com/downloads/win
+
+Required Go modules (installed automatically using go mod tidy, see in Installation & Setup)
 
 Working proxy list in the format:
 - user:pass@ip:port
