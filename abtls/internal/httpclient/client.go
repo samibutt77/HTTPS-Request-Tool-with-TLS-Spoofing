@@ -1,4 +1,6 @@
 package httpclient
+import "golang.org/x/net/http2"
+
 
 import (
 	"os"
@@ -180,7 +182,7 @@ func NewClient(proxyStr, proxyType, tlsProfile, username, password string) (*htt
 				Password: password,
 			}
 		}
-		socksDialer, err := goproxy.SOCKS5("tcp", proxyStr, auth, &net.Dialer{Timeout: 35 * time.Second})
+		socksDialer, err := goproxy.SOCKS5("tcp", proxyStr, auth, &net.Dialer{Timeout: 45 * time.Second})
 		if err != nil {
 			return nil, err
 		}
@@ -206,7 +208,7 @@ func NewClient(proxyStr, proxyType, tlsProfile, username, password string) (*htt
 		transport = &http.Transport{
 			Proxy: http.ProxyURL(proxyURL),
 			DialTLS: func(network, addr string) (net.Conn, error) {
-				rawConn, err := net.DialTimeout(network, addr, 35*time.Second)
+				rawConn, err := net.DialTimeout(network, addr, 45*time.Second)
 				if err != nil {
 					return nil, err
 				}
@@ -224,10 +226,13 @@ func NewClient(proxyStr, proxyType, tlsProfile, username, password string) (*htt
 		}
 	}
 
+	// Enable HTTP/2 if ALPN negotiated
+	_ = http2.ConfigureTransport(transport)
+	
 	jar, _ := cookiejar.New(nil)
 	client := &http.Client{
 		Transport: transport,
-		Timeout:   35 * time.Second,
+		Timeout:   45 * time.Second,
 		Jar:       jar,
 	}
 	return client, nil
