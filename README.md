@@ -62,7 +62,7 @@ Run from terminal:
 
 Example:
 
-- go run cmd/abtls/main.go --url "https://www.viagogo.com/Concert-Tickets/Alternative-Music/Coldplay-Tickets/E-155741198" --profile safari --min-delay 500 --max-delay 3000
+- go run cmd/abtls/main.go --url "https://www.viagogo.com/Concert-Tickets/Alternative-Music/Coldplay-Tickets/E-155741198" --profile random --min-delay 500 --max-delay 3000
 
 # To print known benign JA3, run the command "go run cmd/abtls/main.go --list-ja3"
 
