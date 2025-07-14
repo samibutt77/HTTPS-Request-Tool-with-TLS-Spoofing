@@ -29,6 +29,10 @@ func Run(cfg *config.Config) {
 		proxies[i], proxies[j] = proxies[j], proxies[i]
 	})
 
+	successCount := 0
+	totalCount := len(proxies)
+
+
 	for idx, p := range proxies {
 		profile := cfg.TLSProfile
 		if profile == "random" {
@@ -61,13 +65,15 @@ func Run(cfg *config.Config) {
 			resp, err := client.Do(req)
 			if err == nil {
 				if handleResponse(resp, req, client, profile) {
-					return
+					//return
+					successCount++
 				}
 			} else {
 				fmt.Println("❌ Request failed on HTTP:", err)
 			}
 		}
 
+		/*
 		// Fallback to SOCKS5
 		client, err = httpclient.NewClient(p.Address, "socks5", profile, p.Username, p.Password)
 		proxyTypeUsed = "socks5"
@@ -94,16 +100,20 @@ func Run(cfg *config.Config) {
 			fmt.Println("❌ Request failed on SOCKS5:", err)
 		} else {
 			if handleResponse(resp, req, client, profile) {
-				return
+				//return
+				successCount++
 			}
 		}
+		*/
 
 		delay := time.Duration(rand.Intn(cfg.MaxDelay-cfg.MinDelay)+cfg.MinDelay) * time.Millisecond
 		fmt.Printf("⏱ Waiting %v before next proxy...\n", delay)
 		time.Sleep(delay)
 	}
 
-	fmt.Println("❌ All proxies failed or none returned 200 OK without challenge.")
+	//fmt.Println("❌ All proxies failed or none returned 200 OK without challenge.")
+	fmt.Printf("✅ Finished. Success rate: %d/%d (%.2f%%)\n", successCount, totalCount, (float64(successCount)/float64(totalCount))*100)
+
 }
 
 func handleResponse(resp *http.Response, req *http.Request, client *http.Client, profile string) bool {
@@ -147,6 +157,7 @@ func handleResponse(resp *http.Response, req *http.Request, client *http.Client,
 	}
 
 	if resp.StatusCode == 200 && !challenged {
+		//successCount++
 		fmt.Println("✅ Success")
 		fmt.Println("Status:", resp.StatusCode)
 		fmt.Println("Body Snippet:", snippet)
@@ -170,6 +181,7 @@ func handleResponse(resp *http.Response, req *http.Request, client *http.Client,
 		}
 
 		return true
+		//continue
 	} else if resp.StatusCode == 403 {
 		fmt.Println("🚫 Blocked with status 403")
 	} else if challenged {
