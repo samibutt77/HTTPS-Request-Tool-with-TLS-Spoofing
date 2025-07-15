@@ -4,7 +4,7 @@ A high-performance, Go-based HTTP client designed to bypass anti-bot mechanisms 
 # Features
 🔐 TLS Fingerprint Spoofing using uTLS (Chrome, Firefox, Safari presets)
 
-🌐 Proxy Rotation (HTTP and SOCKS5 with optional authentication)
+🌐 Proxy Rotation
 
 🎭 Browser Header Spoofing
 
@@ -24,7 +24,6 @@ A high-performance, Go-based HTTP client designed to bypass anti-bot mechanisms 
 
 🔑 JA3 Hash Calculation & Logging (for each fingerprint)
 
-📁 Single proxy file input with fallback (tries both HTTP and SOCKS5 for each)
 
 # Prerequisites
 Before running the tool, ensure you have:
@@ -58,13 +57,24 @@ Ensure your proxy file proxies.txt is placed in the root directory.
 
 Run from terminal:
 
- - go run cmd/abtls/main.go --url "<TARGET_URL>" --profile <chrome|firefox|safari|random> --min-delay 500 --max-delay 3000
+ - go run cmd/abtls/main.go --url "<TARGET_URL>" --profile <chrome|firefox|safari|random> --min-delay 500 --max-delay 3000 --shuffle=<true|false>
+
+ - "random" Profile is preferred as I was getting great results on it.
 
 Example:
 
-- go run cmd/abtls/main.go --url "https://www.viagogo.com/Concert-Tickets/Alternative-Music/Coldplay-Tickets/E-155741198" --profile random --min-delay 500 --max-delay 3000
+- go run cmd/abtls/main.go --url "https://www.viagogo.com/Concert-Tickets/Alternative-Music/Coldplay-Tickets/E-155741198" --profile random --min-delay 3000 --max-delay 5000 --shuffle=true
 
-# To print known benign JA3, run the command "go run cmd/abtls/main.go --list-ja3"
+- Enter total number of requests as input.
+
+# Output Sample
+
+<img width="910" height="715" alt="image" src="https://github.com/user-attachments/assets/d5d9f604-bcb8-4dcc-b21d-6f11f841daf5" />
+
+
+# Additional
+
+- To print known benign JA3, run the command "go run cmd/abtls/main.go --list-ja3"
 
 
 # Options:
@@ -79,19 +89,24 @@ Flag	Description
 
 --max-delay	Maximum delay between proxies (ms)
 
+--shuffle Determines if proxies are shuffled or the order in proxies.txt file is followed
+
 # Proxy Behavior
 
-- Tool uses a single list (proxies.txt)
+Proxies are loaded from proxies.txt in the format:
+ - user:pass@ip:port
 
-- Each proxy is:
+Optional shuffle proxies with --shuffle=true (default is in order according to the order in proxies.txt file)
 
-  - Tried first as HTTP
+Each proxy is tried using HTTP:
 
-  - If that fails, retried as SOCKS5
+ - If it returns 200 OK, the tool keeps using it until it fails.
 
-- Proxies can include credentials (user:pass@ip:port) or be simple ip:port 
+ - If it fails or gets blocked, it moves to the next proxy.
 
-- Randomly shuffled before processing
+Stops after reaching the user-defined total request limit.
+
+Successful proxy-profile combinations (on 200 OK) are stored once in successful_combos.txt.
 
 # Challenge Detection (Body Heuristics)
 
@@ -136,9 +151,9 @@ If the JA3 isn't already known (in known_JA3.txt), it's appended
 
 Helps build a list of successful fingerprints over time
 
-# Output Sample
 
-<img width="1915" height="848" alt="image (2)" src="https://github.com/user-attachments/assets/8ebc21ed-a323-443d-8694-c2075b496d58" />
+
+
 
 
   
