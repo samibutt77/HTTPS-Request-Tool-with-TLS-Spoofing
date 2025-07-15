@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	"os"
 
 	"github.com/andybalholm/brotli"
 
@@ -15,6 +16,20 @@ import (
 	"abtls/internal/httpclient"
 	"abtls/internal/proxy"
 )
+
+
+func saveSuccessfulProxy(proxyStr, profile string) {
+	f, err := os.OpenFile("successful_combos.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		fmt.Println("❌ Could not write successful combos:", err)
+		return
+	}
+	defer f.Close()
+
+	entry := fmt.Sprintf("%s | profile: %s\n", proxyStr, profile)
+	f.WriteString(entry)
+}
+
 
 func Run(cfg *config.Config) {
 	proxies, err := proxy.LoadMixedProxyList("proxies.txt")
@@ -24,99 +39,102 @@ func Run(cfg *config.Config) {
 	}
 
 	presets := []string{"chrome", "firefox", "safari"}
-	rand.Seed(time.Now().UnixNano())
-	rand.Shuffle(len(proxies), func(i, j int) {
-		proxies[i], proxies[j] = proxies[j], proxies[i]
-	})
+	//rand.Seed(time.Now().UnixNano())
+	if cfg.Shuffle {
+		rand.Seed(time.Now().UnixNano())
+		rand.Shuffle(len(proxies), func(i, j int) {
+			proxies[i], proxies[j] = proxies[j], proxies[i]
+		})
+	}
+
+
+	var targetRequests int
+	fmt.Print("🔢 Enter the total number of requests to send: ")
+	fmt.Scanf("%d", &targetRequests)
+
+	if targetRequests <= 0 {
+		fmt.Println("❌ Invalid number of requests. Exiting.")
+		return
+	}
 
 	successCount := 0
-	totalCount := len(proxies)
+	totalSent := 0
 
+	writtenCombos := make(map[string]bool) // ✅ deduplication
+
+	fmt.Printf("\n🚀 Starting with target of %d requests...\n", targetRequests)
 
 	for idx, p := range proxies {
+		if totalSent >= targetRequests {
+			break
+		}
+
 		profile := cfg.TLSProfile
 		if profile == "random" {
 			profile = presets[rand.Intn(len(presets))]
 		}
 
-		var client *http.Client
-		var err error
-		var proxyTypeUsed string
-
-		// Try HTTP first
-		client, err = httpclient.NewClient(p.Address, "http", profile, p.Username, p.Password)
-		proxyTypeUsed = "http"
-
-		fmt.Printf("\n[%d/%d] Trying proxy (%s): %s | TLS profile: %s\n", idx+1, len(proxies), proxyTypeUsed, p.Address, profile)
-
+		client, err := httpclient.NewClient(p.Address, "http", profile, p.Username, p.Password)
 		if err != nil {
-			fmt.Printf("\n[%d/%d] ❌ Failed to build HTTP client: %s\n", idx+1, len(proxies), err)
-		} else {
-			req, _ := http.NewRequest("GET", cfg.URL, nil)
-			req.Header = httpclient.GetHeadersForProfile(profile)
-
-			fmt.Println("Request Headers:")
-			for key, values := range req.Header {
-				for _, v := range values {
-					fmt.Printf("%s: %s\n", key, v)
-				}
-			}
-
-			resp, err := client.Do(req)
-			if err == nil {
-				if handleResponse(resp, req, client, profile) {
-					//return
-					successCount++
-				}
-			} else {
-				fmt.Println("❌ Request failed on HTTP:", err)
-			}
-		}
-
-		/*
-		// Fallback to SOCKS5
-		client, err = httpclient.NewClient(p.Address, "socks5", profile, p.Username, p.Password)
-		proxyTypeUsed = "socks5"
-
-		fmt.Printf("\n[%d/%d] Trying proxy (%s): %s | TLS profile: %s\n", idx+1, len(proxies), proxyTypeUsed, p.Address, profile)
-
-		if err != nil {
-			fmt.Printf("\n[%d/%d] ❌ Failed to build SOCKS5 client: %s\n", idx+1, len(proxies), err)
+			fmt.Printf("❌ Failed to build HTTP client for proxy %s: %s\n", p.Address, err)
 			continue
 		}
 
-		req, _ := http.NewRequest("GET", cfg.URL, nil)
-		req.Header = httpclient.GetHeadersForProfile(profile)
+		fmt.Printf("\n[%d/%d] 🌐 Using proxy: %s@%s | TLS profile: %s\n",
+			idx+1, len(proxies), p.Username, p.Address, profile)
 
-		fmt.Println("Request Headers:")
-		for key, values := range req.Header {
-			for _, v := range values {
-				fmt.Printf("%s: %s\n", key, v)
+		comboKey := fmt.Sprintf("%s|%s", p.Full, profile)
+		wroteThisCombo := false
+
+		// Keep using this proxy until it fails or max requests reached
+		for totalSent < targetRequests {
+			req, _ := http.NewRequest("GET", cfg.URL, nil)
+			headers := httpclient.GetOrderedHeadersForProfile(profile)
+			for _, h := range headers {
+				req.Header.Add(h.Key, h.Value)
 			}
-		}
 
-		resp, err := client.Do(req)
-		if err != nil {
-			fmt.Println("❌ Request failed on SOCKS5:", err)
-		} else {
-			if handleResponse(resp, req, client, profile) {
-				//return
+			fmt.Println("Request Headers:")
+			for _, h := range headers {
+				fmt.Printf("%s: %s\n", h.Key, h.Value)
+			}
+
+			resp, err := client.Do(req)
+			totalSent++
+
+			if err != nil {
+				fmt.Println("❌ Request failed:", err)
+				break
+			}
+
+			if handleResponse(resp, req, client, profile, p.Full) {
 				successCount++
-			}
-		}
-		*/
 
-		delay := time.Duration(rand.Intn(cfg.MaxDelay-cfg.MinDelay)+cfg.MinDelay) * time.Millisecond
-		fmt.Printf("⏱ Waiting %v before next proxy...\n", delay)
-		time.Sleep(delay)
+				// ✅ Save only first time
+				if !wroteThisCombo && !writtenCombos[comboKey] {
+					saveSuccessfulProxy(p.Full, profile)
+					writtenCombos[comboKey] = true
+					wroteThisCombo = true
+				}
+			} else {
+				break // Stop using this proxy if response isn't 200 OK or has challenge
+			}
+
+			delay := time.Duration(rand.Intn(cfg.MaxDelay-cfg.MinDelay)+cfg.MinDelay) * time.Millisecond
+			fmt.Printf("⏱ Waiting %v before next request on same proxy...\n", delay)
+			time.Sleep(delay)
+		}
 	}
 
-	//fmt.Println("❌ All proxies failed or none returned 200 OK without challenge.")
-	fmt.Printf("✅ Finished. Success rate: %d/%d (%.2f%%)\n", successCount, totalCount, (float64(successCount)/float64(totalCount))*100)
-
+	fmt.Printf("\n✅ Finished. Total Requests: %d | Successes: %d | Success Rate: %.2f%%\n",
+		totalSent, successCount, (float64(successCount)/float64(totalSent))*100)
 }
 
-func handleResponse(resp *http.Response, req *http.Request, client *http.Client, profile string) bool {
+
+
+
+
+func handleResponse(resp *http.Response, req *http.Request, client *http.Client, profile string, fullProxy string) bool {
 	defer resp.Body.Close()
 
 	var reader io.ReadCloser
@@ -142,14 +160,19 @@ func handleResponse(resp *http.Response, req *http.Request, client *http.Client,
 	}
 
 	snippet := string(body)
-	if len(snippet) > 200 {
-		snippet = snippet[:200]
-	}
 
-	challengeMarkers := []string{"cf-challenge", "g-recaptcha", "verify you are human"}
+	// 🚧 Heuristic Challenge Detection (Cloudflare / Akamai / PerimeterX etc.)
+	challengeMarkers := []string{
+		"cf-challenge",
+		"g-recaptcha",
+		"verify you are human",
+		"location.reload",                     // Reload on challenge solve
+		"XMLHttpRequest.prototype.send",      // JS override seen in Akamai
+		"script.src.match(/t=([^&#]*)/)",     // Challenge ID token
+	}
 	challenged := false
 	for _, marker := range challengeMarkers {
-		if strings.Contains(strings.ToLower(snippet), marker) {
+		if strings.Contains(strings.ToLower(snippet), strings.ToLower(marker)) {
 			challenged = true
 			fmt.Printf("⚠️ Challenge detected in response body (marker: %s)\n", marker)
 			break
@@ -157,7 +180,6 @@ func handleResponse(resp *http.Response, req *http.Request, client *http.Client,
 	}
 
 	if resp.StatusCode == 200 && !challenged {
-		//successCount++
 		fmt.Println("✅ Success")
 		fmt.Println("Status:", resp.StatusCode)
 		fmt.Println("Body Snippet:", snippet)
@@ -179,15 +201,14 @@ func handleResponse(resp *http.Response, req *http.Request, client *http.Client,
 				}
 			}
 		}
-
 		return true
-		//continue
 	} else if resp.StatusCode == 403 {
 		fmt.Println("🚫 Blocked with status 403")
 	} else if challenged {
-		fmt.Println("🚧 Blocked due to challenge in body")
+		fmt.Println("🚧 Blocked due to JavaScript/Challenge in body")
 	} else if resp.StatusCode >= 300 && resp.StatusCode < 400 {
 		fmt.Printf("🔁 Detected redirect to: %s\n", resp.Header.Get("Location"))
 	}
 	return false
 }
+

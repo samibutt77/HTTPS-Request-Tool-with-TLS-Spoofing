@@ -1,50 +1,59 @@
 package httpclient
 
-import "net/http"
+//import "net/http"
 
-func GetHeadersForProfile(profile string) http.Header {
-	headers := http.Header{}
-
-	switch profile {
-	case "chrome":
-		headers.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36")
-		headers.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
-		headers.Set("Accept-Language", "en-US,en;q=0.9")
-		headers.Set("Accept-Encoding", "gzip, deflate, br")
-		headers.Set("Sec-Fetch-Dest", "document")
-		headers.Set("Sec-Fetch-Mode", "navigate")
-		headers.Set("Sec-Fetch-Site", "none")
-		headers.Set("Sec-Fetch-User", "?1")
-		headers.Set("Upgrade-Insecure-Requests", "1")
-		headers.Set("Sec-CH-UA", `"Chromium";v="114", "Not.A/Brand";v="8", "Google Chrome";v="114"`)
-		headers.Set("Sec-CH-UA-Mobile", "?0")
-		headers.Set("Sec-CH-UA-Platform", `"Windows"`)
-		headers.Set("Referer", "https://www.google.com/")
-		headers.Set("Origin", "https://www.google.com")
-
-	case "firefox":
-		headers.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0")
-		headers.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
-		headers.Set("Accept-Language", "en-US,en;q=0.5")
-		headers.Set("Accept-Encoding", "gzip, deflate, br")
-		headers.Set("Upgrade-Insecure-Requests", "1")
-		headers.Set("Sec-Fetch-Dest", "document")
-		headers.Set("Sec-Fetch-Mode", "navigate")
-		headers.Set("Sec-Fetch-Site", "none")
-		headers.Set("Sec-Fetch-User", "?1")
-		headers.Set("Referer", "https://www.google.com/")
-		headers.Set("Origin", "https://www.google.com")
-
-	case "safari":
-		headers.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.2 Safari/605.1.15")
-		headers.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
-		headers.Set("Accept-Language", "en-us")
-		headers.Set("Accept-Encoding", "gzip, deflate, br")
-		headers.Set("Upgrade-Insecure-Requests", "1")
-		headers.Set("Referer", "https://www.google.com/")
-		headers.Set("Origin", "https://www.google.com")
-	}
-
-	return headers
+type Header struct {
+	Key   string
+	Value string
 }
 
+func GetOrderedHeadersForProfile(profile string) []Header {
+	switch profile {
+	case "chrome":
+		return []Header{
+			{"Sec-Ch-Ua", `"Chromium";v="114", "Not.A/Brand";v="8", "Google Chrome";v="114"`},
+			{"Sec-Ch-Ua-Mobile", "?0"},
+			{"Sec-Ch-Ua-Platform", `"Windows"`},
+			{"Upgrade-Insecure-Requests", "1"},
+			{"User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"},
+			{"Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"},
+			{"Sec-Fetch-Site", "none"},
+			{"Sec-Fetch-Mode", "navigate"},
+			{"Sec-Fetch-User", "?1"},
+			{"Sec-Fetch-Dest", "document"},
+			{"Accept-Encoding", "gzip, deflate, br"},
+			{"Accept-Language", "en-US,en;q=0.9"},
+			{"Referer", "https://www.google.com/"},
+			{"Origin", "https://www.google.com"},
+		}
+
+	case "firefox":
+		return []Header{
+			{"Upgrade-Insecure-Requests", "1"},
+			{"User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0"},
+			{"Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"},
+			{"Accept-Language", "en-US,en;q=0.5"},
+			{"Accept-Encoding", "gzip, deflate, br"},
+			{"Sec-Fetch-Site", "none"},
+			{"Sec-Fetch-Mode", "navigate"},
+			{"Sec-Fetch-User", "?1"},
+			{"Sec-Fetch-Dest", "document"},
+			{"Referer", "https://www.google.com/"},
+			{"Origin", "https://www.google.com"},
+		}
+
+	case "safari":
+		return []Header{
+			{"Upgrade-Insecure-Requests", "1"},
+			{"User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.2 Safari/605.1.15"},
+			{"Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"},
+			{"Accept-Language", "en-us"},
+			{"Accept-Encoding", "gzip, deflate, br"},
+			{"Referer", "https://www.google.com/"},
+			{"Origin", "https://www.google.com"},
+		}
+
+	default:
+		return nil
+	}
+}

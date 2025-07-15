@@ -12,6 +12,7 @@ type Proxy struct {
 	Type     string // always "mixed" in this case
 	Username string
 	Password string
+	Full     string 
 }
 
 // LoadProxyList loads proxies from a file and marks them as "mixed"
@@ -33,6 +34,7 @@ func LoadProxyList(path string) ([]Proxy, error) {
 
 		var proxy Proxy
 		proxy.Type = "mixed"
+		proxy.Full = line
 
 		if strings.Contains(line, "@") {
 			// Handle user:pass@ip:port
