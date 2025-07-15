@@ -59,7 +59,7 @@ Run from terminal:
 
  - go run cmd/abtls/main.go --url "<TARGET_URL>" --profile <chrome|firefox|safari|random> --min-delay 500 --max-delay 3000 --shuffle=<true|false>
 
- - "random" Profile is preferred as I was getting great results on it.
+ - "random" Profile with shuffle enabled is preferred as I was getting great results on it.
 
 Example:
 
